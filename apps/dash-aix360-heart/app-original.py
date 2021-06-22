@@ -5,13 +5,12 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from sklearn.metrics import accuracy_score
 
 from utils import compute_plot_gam
 from modeling import lrr, df, fb, col_map
-from modeling import dfTrain, dfTrainStd, dfTest, dfTestStd, yTrain, yTest, y, lime_rf, lrr2
-import interpret
+from modeling import dfTrain, dfTrainStd, dfTest, dfTestStd, yTrain, yTest
+
 
 def Header(name, app):
     title = html.H2(name, style={"margin-top": 5})
@@ -25,7 +24,6 @@ def Header(name, app):
 def LabeledSelect(label, **kwargs):
     return dbc.FormGroup([dbc.Label(label), dbc.Select(**kwargs)])
 
-# Add bootstrap components if need be https://dash-bootstrap-components.opensource.faculty.ai/examples/iris/
 
 # Compute the explanation dataframe, GAM, and scores
 xdf = lrr.explain().rename(columns={"rule/numerical feature": "rule"})
@@ -33,6 +31,8 @@ xPlot, yPlot, plotLine = compute_plot_gam(lrr, df, fb, df.columns)
 train_acc = accuracy_score(yTrain, lrr.predict(dfTrain, dfTrainStd))
 test_acc = accuracy_score(yTest, lrr.predict(dfTest, dfTestStd))
 
+print(train_acc)
+print(fb)
 
 # Start the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -71,18 +71,6 @@ cards = [
 
 # Graph components
 graphs = [
-
-    [
-        LabeledSelect(
-            id="select-gam",
-            options=[{"label": col_map[k], "value": k} for k in xPlot.keys()],
-            value=list(xPlot.keys())[0],
-            label="Visualize GAM",
-        ),
-        dcc.Graph("graph-hole"),
-        dcc.Graph("graph-lime"),
-        dcc.Graph("graph-gam"),
-    ],
     [
         LabeledSelect(
             id="select-coef",
@@ -90,12 +78,17 @@ graphs = [
             value=list(xPlot.keys())[0],
             label="Filter Features",
         ),
-        dcc.Graph(id="graph-output"),
-        dcc.Graph("graph-exp-AIX"),
-
-
+        dcc.Graph(id="graph-coef"),
     ],
-
+    [
+        LabeledSelect(
+            id="select-gam",
+            options=[{"label": col_map[k], "value": k} for k in xPlot.keys()],
+            value=list(xPlot.keys())[0],
+            label="Visualize GAM",
+        ),
+        dcc.Graph("graph-gam"),
+    ],
 ]
 
 app.layout = dbc.Container(
@@ -111,12 +104,10 @@ app.layout = dbc.Container(
 
 
 @app.callback(
-    [ Output("graph-exp-AIX", "figure"), Output("graph-lime", "figure"), Output("graph-gam", "figure"), Output("graph-hole", "figure"), Output("graph-output", "figure")], #Output("graph-exp", "figure"),
-    [ Input("select-gam", "value"), Input("select-gam", "value"), Input("select-coef", "value")], #not all figs affected by change in data
+    [Output("graph-gam", "figure"), Output("graph-coef", "figure")],
+    [Input("select-gam", "value"), Input("select-coef", "value")],
 )
-# coef_fig, lime_fig, gam_fig, hole_fig, output_fig
-
-def update_figures(gam_col2, gam_col, coef_col):
+def update_figures(gam_col, coef_col):
 
     # Filter based on chosen column
     xdf_filt = xdf[xdf.rule.str.contains(coef_col)].copy()
@@ -139,34 +130,15 @@ def update_figures(gam_col2, gam_col, coef_col):
     else:
         plot_fn = px.bar
 
-    output_fig = px.scatter(
-        x=df[gam_col],
-        y=y,
-        title="Real Y vales",
-        labels={"x": gam_col, "y": "Output Y"},
-    )
-
     gam_fig = plot_fn(
-        x=xPlot[gam_col2],
-        y=yPlot[gam_col2],
+        x=xPlot[gam_col],
+        y=yPlot[gam_col],
         title="Generalized additive model component",
-        labels={"x": gam_col2, "y": "contribution to log-odds of Y=1"},
+        labels={"x": gam_col, "y": "contribution to log-odds of Y=1"},
     )
 
-    # Rola testing doughnut visualizations, Use `hole` to create a donut-like pie chart
-    import numpy as np
-    predictions = np.squeeze(lrr2.predict_proba(dfTest[1:2]))
-    labels = ['Negative', 'Positive']
-    print(predictions)
-    values = [predictions[0], predictions[1]]
-    hole_fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+    return gam_fig, coef_fig
 
-    lime_local = lime_rf.explain_local(dfTest[:5], yTest[:5], name='LIME') # this takes a long time,may be due to the number of features.
-
-    lime_fig = lime_local.visualize(1)  #go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)]) #lime_local.visualize(1) # no args is the summary, but that is not working in the lime gui either.
-    #interpret.show(lime_local)
-    return coef_fig, lime_fig, gam_fig, hole_fig, output_fig
-    #Output("graph-exp-AIX", "figure"), Output("graph-gam3", "figure"), Output("graph-gam2", "figure"), Output("graph-gam", "figure"), Output("graph-coef", "figure")
 
 if __name__ == "__main__":
     app.run_server(debug=True, host='0.0.0.0')
