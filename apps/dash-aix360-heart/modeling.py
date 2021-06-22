@@ -3,39 +3,25 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 col_map = {
-    "trestbps": "Resting blood pressure (trestbps)",
-    "chol": "Cerum cholestoral (chol)",
-    "fbs": "Fasting blood sugar (fbs)",
-    "restecg": "Resting electrocardiographic results (restecg)",
-    "thalach": "Maximum heart rate achieved (thalach)",
-    "exang": "Exercise induced angina (exang)",
-    "oldpeak": "S-T depression induced by exercise relative to rest (oldpeak)",
-    "age": "Age",
-    "sex": "Sex",
-    "cp": "Chest pain type (cp)",
-    "slope": "Slope of peak exercise S-T segment (slope)",
-    "ca": "Number of major vessels (ca)",
-    "thal": "Defect type (thal)",
+    "HR": "HR",
+    "O2Sat": "O2Sat",
+    "Temp": "Temp",
+    "SBP": "SBP",
+    "MAP": "MAP",
+    "DBP": "DBP",
+    "Resp": "Resp",
+    "Age": "Age",
+    "Gender": "Gender",
+    "ICULOS": "ICULOS"
 }
 
 num2desc = {
-    "sex": {0: "Female", 1: "Male"},
-    "cp": {
-        0: "typical angina",
-        1: "atypical angina",
-        2: "non-aginal pain",
-        3: "asymptomatic",
-    },
-    "fbs": {0: "False", 1: "True"},
-    "restecg": {
-        0: "normal",
-        1: "ST-T wave abnormality",
-        2: "left ventricular hypertrophy",
-    },
+    "Gender": {0: "Female", 1: "Male"}
 }
 
 # Load and preprocess dataset
 df = pd.read_csv("heart.csv")
+print(df.head())
 for k, v in num2desc.items():
     df[k] = df[k].replace(v)
 

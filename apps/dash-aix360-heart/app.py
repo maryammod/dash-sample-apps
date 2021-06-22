@@ -31,6 +31,8 @@ xPlot, yPlot, plotLine = compute_plot_gam(lrr, df, fb, df.columns)
 train_acc = accuracy_score(yTrain, lrr.predict(dfTrain, dfTrainStd))
 test_acc = accuracy_score(yTest, lrr.predict(dfTest, dfTestStd))
 
+print(train_acc)
+print(fb)
 
 # Start the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -139,4 +141,4 @@ def update_figures(gam_col, coef_col):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='0.0.0.0')
