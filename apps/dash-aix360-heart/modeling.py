@@ -1,12 +1,14 @@
-from aix360.algorithms.rbm import LogisticRuleRegression, FeatureBinarizer
+from aix360.algorithms.rbm import FeatureBinarizer
 import pandas as pd
+import pickle
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+
+
 
 col_map = {
     "HR": "HR",
     "O2Sat": "O2Sat",
-    "Temp": "Temp",
+    "Temp": "Tempreture",
     "SBP": "SBP",
     "MAP": "MAP",
     "DBP": "DBP",
@@ -22,7 +24,7 @@ num2desc = {
 
 # Load and preprocess dataset
 df = pd.read_csv("heart.csv")
-print(df.head())
+
 for k, v in num2desc.items():
     df[k] = df[k].replace(v)
 
@@ -34,15 +36,4 @@ dfTrain, dfTrainStd = fb.fit_transform(dfTrain)
 dfTest, dfTestStd = fb.transform(dfTest)
 
 # Train model
-lrr = LogisticRuleRegression(lambda0=0.005, lambda1=0.001, useOrd=True)
-lrr.fit(dfTrain, yTrain, dfTrainStd)
-
-lrr2 = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-lrr2.fit(dfTrain, yTrain)
-
-# Rola add: Lime interpretability
-from interpret.blackbox import LimeTabular
-from interpret import show
-
-#Blackbox explainers need a predict function, and optionally a dataset
-lime_rf = LimeTabular(predict_fn=lrr2.predict_proba, data=dfTrain, random_state=1)
+# Maryam, transfer training code to the train.app
